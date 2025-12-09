@@ -1,6 +1,6 @@
 # Every Marketplace - Claude Code Plugin Marketplace
 
-This repository is a Claude Code plugin marketplace that distributes the `compounding-engineering` plugin to developers building with AI-powered tools.
+This repository is a Claude Code plugin marketplace that distributes the `compound-engineering` plugin to developers building with AI-powered tools.
 
 ## Repository Structure
 
@@ -14,7 +14,7 @@ every-marketplace/
 │   ├── js/                       # JavaScript
 │   └── pages/                    # Reference pages
 └── plugins/
-    └── compounding-engineering/   # The actual plugin
+    └── compound-engineering/   # The actual plugin
         ├── .claude-plugin/
         │   └── plugin.json        # Plugin metadata
         ├── agents/                # 24 specialized AI agents
@@ -60,22 +60,22 @@ When agents, commands, or skills are added/removed, follow this checklist:
 
 ```bash
 # Count agents
-ls plugins/compounding-engineering/agents/*.md | wc -l
+ls plugins/compound-engineering/agents/*.md | wc -l
 
 # Count commands
-ls plugins/compounding-engineering/commands/*.md | wc -l
+ls plugins/compound-engineering/commands/*.md | wc -l
 
 # Count skills
-ls -d plugins/compounding-engineering/skills/*/ 2>/dev/null | wc -l
+ls -d plugins/compound-engineering/skills/*/ 2>/dev/null | wc -l
 ```
 
 #### 2. Update ALL description strings with correct counts
 
 The description appears in multiple places and must match everywhere:
 
-- [ ] `plugins/compounding-engineering/.claude-plugin/plugin.json` → `description` field
+- [ ] `plugins/compound-engineering/.claude-plugin/plugin.json` → `description` field
 - [ ] `.claude-plugin/marketplace.json` → plugin `description` field
-- [ ] `plugins/compounding-engineering/README.md` → intro paragraph
+- [ ] `plugins/compound-engineering/README.md` → intro paragraph
 
 Format: `"Includes X specialized agents, Y commands, and Z skill(s)."`
 
@@ -83,13 +83,13 @@ Format: `"Includes X specialized agents, Y commands, and Z skill(s)."`
 
 When adding new functionality, bump the version in:
 
-- [ ] `plugins/compounding-engineering/.claude-plugin/plugin.json` → `version`
+- [ ] `plugins/compound-engineering/.claude-plugin/plugin.json` → `version`
 - [ ] `.claude-plugin/marketplace.json` → plugin `version`
 
 #### 4. Update documentation
 
-- [ ] `plugins/compounding-engineering/README.md` → list all components
-- [ ] `plugins/compounding-engineering/CHANGELOG.md` → document changes
+- [ ] `plugins/compound-engineering/README.md` → list all components
+- [ ] `plugins/compound-engineering/CHANGELOG.md` → document changes
 - [ ] `CLAUDE.md` → update structure diagram if needed
 
 #### 5. Rebuild documentation site
@@ -110,15 +110,15 @@ This will:
 
 ```bash
 cat .claude-plugin/marketplace.json | jq .
-cat plugins/compounding-engineering/.claude-plugin/plugin.json | jq .
+cat plugins/compound-engineering/.claude-plugin/plugin.json | jq .
 ```
 
 #### 6. Verify before committing
 
 ```bash
 # Ensure counts in descriptions match actual files
-grep -o "Includes [0-9]* specialized agents" plugins/compounding-engineering/.claude-plugin/plugin.json
-ls plugins/compounding-engineering/agents/*.md | wc -l
+grep -o "Includes [0-9]* specialized agents" plugins/compound-engineering/.claude-plugin/plugin.json
+ls plugins/compound-engineering/agents/*.md | wc -l
 ```
 
 ### Marketplace.json Structure
@@ -267,7 +267,7 @@ python -m http.server 8000
 2. Install the plugin:
 
    ```bash
-   claude /plugin install compounding-engineering
+   claude /plugin install compound-engineering
    ```
 
 3. Test agents and commands:
@@ -282,28 +282,28 @@ Before committing, ensure JSON files are valid:
 
 ```bash
 cat .claude-plugin/marketplace.json | jq .
-cat plugins/compounding-engineering/.claude-plugin/plugin.json | jq .
+cat plugins/compound-engineering/.claude-plugin/plugin.json | jq .
 ```
 
 ## Common Tasks
 
 ### Adding a New Agent
 
-1. Create `plugins/compounding-engineering/agents/new-agent.md`
+1. Create `plugins/compound-engineering/agents/new-agent.md`
 2. Update plugin.json agent count and agent list
 3. Update README.md agent list
 4. Test with `claude agent new-agent "test"`
 
 ### Adding a New Command
 
-1. Create `plugins/compounding-engineering/commands/new-command.md`
+1. Create `plugins/compound-engineering/commands/new-command.md`
 2. Update plugin.json command count and command list
 3. Update README.md command list
 4. Test with `claude /new-command`
 
 ### Adding a New Skill
 
-1. Create skill directory: `plugins/compounding-engineering/skills/skill-name/`
+1. Create skill directory: `plugins/compound-engineering/skills/skill-name/`
 2. Add skill structure:
    ```
    skills/skill-name/
@@ -332,7 +332,7 @@ Detailed documentation...
 
 Tags should reflect the compounding engineering philosophy:
 
-- Use: `ai-powered`, `compounding-engineering`, `workflow-automation`, `knowledge-management`
+- Use: `ai-powered`, `compound-engineering`, `workflow-automation`, `knowledge-management`
 - Avoid: Framework-specific tags unless the plugin is framework-specific
 
 ## Commit Conventions

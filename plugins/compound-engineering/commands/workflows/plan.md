@@ -376,21 +376,23 @@ After writing the plan file, use the **AskUserQuestion tool** to present these o
 **Question:** "Plan ready at `plans/<issue_title>.md`. What would you like to do next?"
 
 **Options:**
-1. **Start `/work`** - Begin implementing this plan
+1. **Open plan in editor** - Open the plan file for review
 2. **Run `/plan_review`** - Get feedback from reviewers (DHH, Kieran, Simplicity)
-3. **Create Issue** - Create issue in project tracker (GitHub/Linear)
-4. **Simplify** - Reduce detail level
-5. **Rework** - Change approach or request specific changes
+3. **Start `/work`** - Begin implementing this plan locally
+4. **Start `/work` on remote** - Begin implementing in Claude Code on the web (use `&` to run in background)
+5. **Create Issue** - Create issue in project tracker (GitHub/Linear)
+6. **Simplify** - Reduce detail level
 
 Based on selection:
-- **`/work`** → Call the /work command with the plan file path
+- **Open plan in editor** → Run `open plans/<issue_title>.md` to open the file in the user's default editor
 - **`/plan_review`** → Call the /plan_review command with the plan file path
+- **`/work`** → Call the /work command with the plan file path
+- **`/work` on remote** → Run `/work plans/<issue_title>.md &` to start work in background for Claude Code web
 - **Create Issue** → See "Issue Creation" section below
 - **Simplify** → Ask "What should I simplify?" then regenerate simpler version
-- **Rework** → Ask "What would you like changed?" then regenerate with changes
-- **Other** (automatically provided) → Accept free text, act on it
+- **Other** (automatically provided) → Accept free text for rework or specific changes
 
-Loop back to options after Simplify/Rework until user selects `/work` or `/plan_review`.
+Loop back to options after Simplify or Other changes until user selects `/work` or `/plan_review`.
 
 ## Issue Creation
 

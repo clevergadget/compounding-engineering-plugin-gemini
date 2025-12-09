@@ -6,8 +6,8 @@ AI-powered development tools that get smarter with every use. Make each unit of 
 
 | Component | Count |
 |-----------|-------|
-| Agents | 23 |
-| Commands | 16 |
+| Agents | 24 |
+| Commands | 19 |
 | Skills | 11 |
 | MCP Servers | 2 |
 
@@ -15,7 +15,7 @@ AI-powered development tools that get smarter with every use. Make each unit of 
 
 Agents are organized into categories for easier discovery.
 
-### Review (10)
+### Review (11)
 
 | Agent | Description |
 |-------|-------------|
@@ -29,6 +29,7 @@ Agents are organized into categories for easier discovery.
 | `pattern-recognition-specialist` | Analyze code for patterns and anti-patterns |
 | `performance-oracle` | Performance analysis and optimization |
 | `security-sentinel` | Security audits and vulnerability assessments |
+| `julik-frontend-races-reviewer` | Review JavaScript/Stimulus code for race conditions |
 
 ### Research (4)
 
@@ -86,7 +87,7 @@ Core workflow commands (use the short form for autocomplete):
 | `/heal-skill` | Fix skill documentation issues |
 | `/plan_review` | Multi-agent plan review in parallel |
 | `/prime` | Prime/setup command |
-| `/report-bug` | Report a bug in the compounding-engineering plugin |
+| `/report-bug` | Report a bug in the compound-engineering plugin |
 | `/reproduce-bug` | Reproduce bugs using logs and console |
 | `/resolve_parallel` | Resolve TODO comments in parallel |
 | `/resolve_pr_parallel` | Resolve PR comments in parallel |
@@ -161,7 +162,7 @@ MCP servers start automatically when the plugin is enabled.
 ## Installation
 
 ```bash
-claude /plugin install compounding-engineering
+claude /plugin install compound-engineering
 ```
 
 ## Known Issues

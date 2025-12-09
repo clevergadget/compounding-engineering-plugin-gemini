@@ -1,12 +1,12 @@
 ---
 name: report-bug
-description: Report a bug in the compounding-engineering plugin
+description: Report a bug in the compound-engineering plugin
 argument-hint: "[optional: brief description of the bug]"
 ---
 
 # Report a Compounding Engineering Plugin Bug
 
-Report bugs encountered while using the compounding-engineering plugin. This command gathers structured information and creates a GitHub issue for the maintainer.
+Report bugs encountered while using the compound-engineering plugin. This command gathers structured information and creates a GitHub issue for the maintainer.
 
 ## Step 1: Gather Bug Information
 
@@ -41,7 +41,7 @@ Use the AskUserQuestion tool to collect the following information:
 Automatically gather:
 ```bash
 # Get plugin version
-cat ~/.claude/plugins/installed_plugins.json 2>/dev/null | grep -A5 "compounding-engineering" | head -10 || echo "Plugin info not found"
+cat ~/.claude/plugins/installed_plugins.json 2>/dev/null | grep -A5 "compound-engineering" | head -10 || echo "Plugin info not found"
 
 # Get Claude Code version
 claude --version 2>/dev/null || echo "Claude CLI version unknown"
@@ -101,16 +101,16 @@ Use the GitHub CLI to create the issue:
 ```bash
 gh issue create \
   --repo EveryInc/every-marketplace \
-  --title "[compounding-engineering] Bug: [Brief description]" \
+  --title "[compound-engineering] Bug: [Brief description]" \
   --body "[Formatted bug report from Step 3]" \
-  --label "bug,compounding-engineering"
+  --label "bug,compound-engineering"
 ```
 
 **Note:** If labels don't exist, create without labels:
 ```bash
 gh issue create \
   --repo EveryInc/every-marketplace \
-  --title "[compounding-engineering] Bug: [Brief description]" \
+  --title "[compound-engineering] Bug: [Brief description]" \
   --body "[Formatted bug report]"
 ```
 
@@ -127,9 +127,9 @@ After the issue is created:
 ✅ Bug report submitted successfully!
 
 Issue: https://github.com/EveryInc/every-marketplace/issues/[NUMBER]
-Title: [compounding-engineering] Bug: [description]
+Title: [compound-engineering] Bug: [description]
 
-Thank you for helping improve the compounding-engineering plugin!
+Thank you for helping improve the compound-engineering plugin!
 The maintainer will review your report and respond as soon as possible.
 ```
 

@@ -172,7 +172,34 @@ This command takes a work document (plan, specification, or todo file) and execu
    )"
    ```
 
-2. **Create Pull Request**
+2. **Capture Screenshots for UI Changes** (if applicable)
+
+   For any design changes, new views, or UI modifications:
+
+   ```bash
+   # Start the dev server if not already running
+   bin/dev  # Run in background
+
+   # Use Playwright to take screenshots at mobile width (320px)
+   # Navigate to relevant pages and capture before/after states
+   ```
+
+   Using Playwright MCP tools:
+   - `browser_resize` to set mobile viewport (320x568 or similar)
+   - `browser_navigate` to go to affected pages
+   - `browser_snapshot` to check page state
+   - `browser_take_screenshot` to capture images
+
+   Then upload screenshots using the imgup skill:
+   ```bash
+   # Upload to 0x0.st (recommended, no API key needed)
+   curl -F "file=@screenshot-before.png" https://0x0.st
+   curl -F "file=@screenshot-after.png" https://0x0.st
+   ```
+
+   Include the URLs in your PR description.
+
+3. **Create Pull Request**
 
    ```bash
    git push -u origin feature-branch-name
@@ -187,8 +214,10 @@ This command takes a work document (plan, specification, or todo file) and execu
    - Tests added/modified
    - Manual testing performed
 
-   ## Screenshots/Videos
-   [If UI changes]
+   ## Before / After Screenshots
+   | Before | After |
+   |--------|-------|
+   | ![before](URL) | ![after](URL) |
 
    ## Figma Design
    [Link if applicable]
@@ -198,7 +227,7 @@ This command takes a work document (plan, specification, or todo file) and execu
    )"
    ```
 
-3. **Notify User**
+4. **Notify User**
    - Summarize what was completed
    - Link to PR
    - Note any follow-up work needed
@@ -249,8 +278,9 @@ Before creating PR, verify:
 - [ ] Linting passes (use linting-agent)
 - [ ] Code follows existing patterns
 - [ ] Figma designs match implementation (if applicable)
+- [ ] Before/after screenshots captured and uploaded (for UI changes)
 - [ ] Commit messages follow conventional format
-- [ ] PR description includes summary and testing notes
+- [ ] PR description includes summary, testing notes, and screenshots
 
 ## When to Use Reviewer Agents
 

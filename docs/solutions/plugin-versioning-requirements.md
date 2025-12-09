@@ -11,7 +11,7 @@ component: plugin-development
 
 ## Problem
 
-When making changes to the compounding-engineering plugin, documentation can get out of sync with the actual components (agents, commands, skills). This leads to confusion about what's included in each version and makes it difficult to track changes over time.
+When making changes to the compound-engineering plugin, documentation can get out of sync with the actual components (agents, commands, skills). This leads to confusion about what's included in each version and makes it difficult to track changes over time.
 
 ## Solution
 
@@ -36,7 +36,7 @@ When making changes to the compounding-engineering plugin, documentation can get
 ## Checklist for Plugin Changes
 
 ```markdown
-Before committing changes to compounding-engineering plugin:
+Before committing changes to compound-engineering plugin:
 
 - [ ] Version bumped in `.claude-plugin/plugin.json`
 - [ ] CHANGELOG.md updated with changes
@@ -72,6 +72,6 @@ This documentation serves as a reminder. When Claude Code works on this plugin, 
 
 ## Related Files
 
-- `/Users/kieranklaassen/every-marketplace/plugins/compounding-engineering/.claude-plugin/plugin.json`
-- `/Users/kieranklaassen/every-marketplace/plugins/compounding-engineering/CHANGELOG.md`
-- `/Users/kieranklaassen/every-marketplace/plugins/compounding-engineering/README.md`
+- `/Users/kieranklaassen/every-marketplace/plugins/compound-engineering/.claude-plugin/plugin.json`
+- `/Users/kieranklaassen/every-marketplace/plugins/compound-engineering/CHANGELOG.md`
+- `/Users/kieranklaassen/every-marketplace/plugins/compound-engineering/README.md`

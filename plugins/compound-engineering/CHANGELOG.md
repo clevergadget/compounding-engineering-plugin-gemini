@@ -1,9 +1,37 @@
 # Changelog
 
-All notable changes to the compounding-engineering plugin will be documented in this file.
+All notable changes to the compound-engineering plugin will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.9.3] - 2025-12-05
+
+### Changed
+
+- **`/plan` command** - Added "Open plan in editor" as the first option in post-generation menu. This opens the plan file in the user's default editor for review before deciding on next steps.
+
+## [2.9.2] - 2025-12-04
+
+### Added
+
+- **`/work` command** - Added screenshot documentation step for UI changes. Before creating PRs, use Playwright to capture before/after screenshots, upload via 0x0.st (using imgup skill), and include in PR description.
+
+## [2.9.1] - 2025-12-04
+
+### Changed
+
+- **`/plan` command** - Reordered post-generation options: Review first, Work locally second, Work on remote third (using `&` for background execution). Removed "Rework" as separate option since "Other" handles custom changes.
+
+## [2.9.0] - 2025-12-02
+
+### Changed
+
+- **Plugin renamed** from `compounding-engineering` to `compound-engineering`. Shorter name, same philosophy. Users will need to reinstall with the new name.
+
+### Fixed
+
+- **Documentation counts** - Updated all documentation to reflect actual component counts (24 agents, 19 commands).
 
 ## [2.8.3] - 2025-11-29
 
@@ -63,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`/report-bug` command** - New slash command for reporting bugs in the compounding-engineering plugin. Provides a structured workflow that gathers bug information through guided questions, collects environment details automatically, and creates a GitHub issue in the EveryInc/every-marketplace repository. Designed to be user-friendly for anyone using the plugin.
+- **`/report-bug` command** - New slash command for reporting bugs in the compound-engineering plugin. Provides a structured workflow that gathers bug information through guided questions, collects environment details automatically, and creates a GitHub issue in the EveryInc/every-marketplace repository. Designed to be user-friendly for anyone using the plugin.
 
 ## [2.4.1] - 2024-11-24
 
@@ -209,7 +237,7 @@ Major reorganization consolidating agents, commands, and skills from multiple so
 
 ## [1.0.0] - 2024-10-09
 
-Initial release of the compounding-engineering plugin.
+Initial release of the compound-engineering plugin.
 
 ### Added
 

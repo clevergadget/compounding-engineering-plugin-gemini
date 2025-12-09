@@ -1,6 +1,6 @@
 # Grow Your Own Garden: Adaptive Agent Ecosystem
 
-> **Issue:** https://github.com/EveryInc/compounding-engineering-plugin/issues/20
+> **Issue:** https://github.com/EveryInc/compound-engineering-plugin/issues/20
 
 ## The Idea
 
@@ -58,7 +58,7 @@ plugin/agents/        → From installed plugins
 
 ### Phase 1: Split the Plugin
 - Create `agent-library/` with framework-specific agents (Rails, Python, TypeScript, Frontend)
-- Keep `compounding-engineering` as core with universal agents
+- Keep `compound-engineering` as core with universal agents
 - No breaking changes—existing users unaffected
 
 ### Phase 2: Agent Discovery
