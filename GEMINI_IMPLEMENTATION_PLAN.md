@@ -50,7 +50,7 @@ cd gemini-code-agent
 # Initialize Python project
 python -m venv venv
 source venv/bin/activate
-pip install google-generativeai click rich pyyaml
+pip install google-genai click rich pyyaml
 
 # Create pyproject.toml for packaging
 ```
@@ -143,7 +143,7 @@ Create `src/core/gemini_client.py`:
 Gemini API client with conversation management.
 """
 import os
-import google.generativeai as genai
+from google import genai
 from dataclasses import dataclass
 from typing import Iterator
 
@@ -1041,7 +1041,7 @@ With a team of 2-3, this could be compressed to 6-8 weeks.
 
 ### Python Packages
 ```
-google-generativeai>=0.8.0
+google-genai>=1.5.4
 click>=8.0
 rich>=13.0
 pyyaml>=6.0
