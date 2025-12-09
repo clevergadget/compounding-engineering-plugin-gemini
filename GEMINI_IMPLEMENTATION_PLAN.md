@@ -6,6 +6,8 @@ A detailed, actionable roadmap for reimplementing the compounding-engineering pl
 
 This plan creates **"Gemini Code Agent" (GCA)** - an open-source CLI tool that brings compounding engineering workflows to Gemini users.
 
+**Key Philosophy:** Agents are used for analysis and recommendations **BEFORE** and **AFTER** work is done, but **NOT** for executing the work itself. Work execution is performed by humans or other tools, while agents provide insights, planning, and validation.
+
 ### Target Architecture
 
 ```
@@ -15,14 +17,12 @@ gemini-code-agent/
 │   ├── core/
 │   │   ├── agent_loader.py       # Load agent prompts from markdown
 │   │   ├── gemini_client.py      # Gemini API wrapper
-│   │   ├── orchestrator.py       # Parallel agent execution
 │   │   └── config.py             # Configuration management
 │   ├── commands/
 │   │   ├── plan.py               # /plan implementation
 │   │   ├── work.py               # /work implementation
 │   │   ├── review.py             # /review implementation
-│   │   ├── triage.py             # /triage implementation
-│   │   └── resolve.py            # /resolve_* implementations
+│   │   └── triage.py             # /triage implementation
 │   ├── tools/
 │   │   ├── git_worktree.py       # Git worktree management
 │   │   ├── file_todos.py         # Todo tracking
@@ -286,30 +286,32 @@ if __name__ == '__main__':
 - [ ] Can ask any agent a question and get response
 - [ ] Multi-turn conversations work
 - [ ] Proper error handling
+- [ ] Clear that agents provide analysis, not execution
 
 ---
 
 ## Stage 2: Core Workflows (Week 3-4)
-**Goal:** Implement /review command with parallel agents
+**Goal:** Implement /review command for pre/post-work analysis
 
-### 2.1 Parallel Agent Orchestrator
-**Estimated Time:** 8-12 hours
+### 2.1 Sequential Agent Execution
+**Estimated Time:** 4-6 hours
 
-Create `src/core/orchestrator.py`:
+Agents provide analysis and recommendations before and after work, but do not execute changes themselves.
+
+Key principles:
+- Agents analyze code and provide insights
+- Agents generate recommendations and todos
+- Agents do NOT make code changes directly
+- Work execution happens separately via human or automated processes
+
+Create simple sequential agent runner in `src/core/agent_runner.py`:
 
 ```python
 """
-Run multiple agents in parallel and aggregate results.
+Run agents sequentially for analysis and recommendations.
 """
-import asyncio
 from dataclasses import dataclass
-from typing import Callable
 
-@dataclass
-class AgentTask:
-    agent_name: str
-    context: str
-    
 @dataclass
 class AgentResult:
     agent_name: str
@@ -317,46 +319,38 @@ class AgentResult:
     success: bool
     error: str | None = None
 
-class ParallelOrchestrator:
-    """Execute multiple agents concurrently."""
+class AgentRunner:
+    """Execute agents sequentially for analysis."""
     
-    def __init__(self, registry, client, max_concurrent: int = 5):
+    def __init__(self, registry, client):
         self.registry = registry
         self.client = client
-        self.semaphore = asyncio.Semaphore(max_concurrent)
         
-    async def run_agent(self, task: AgentTask) -> AgentResult:
-        """Run a single agent task."""
-        async with self.semaphore:
-            agent = self.registry.get(task.agent_name)
-            if not agent:
-                return AgentResult(task.agent_name, "", False, f"Agent not found")
-            
-            try:
-                # Run in thread pool since genai is sync
-                loop = asyncio.get_event_loop()
-                result = await loop.run_in_executor(
-                    None,
-                    lambda: self.client.generate(task.context, agent.system_prompt)
-                )
-                return AgentResult(task.agent_name, result, True)
-            except Exception as e:
-                return AgentResult(task.agent_name, "", False, str(e))
+    def run_agent(self, agent_name: str, context: str) -> AgentResult:
+        """Run a single agent for analysis."""
+        agent = self.registry.get(agent_name)
+        if not agent:
+            return AgentResult(agent_name, "", False, f"Agent not found")
+        
+        try:
+            result = self.client.generate(context, agent.system_prompt)
+            return AgentResult(agent_name, result, True)
+        except Exception as e:
+            return AgentResult(agent_name, "", False, str(e))
     
-    async def run_all(self, tasks: list[AgentTask]) -> list[AgentResult]:
-        """Run all tasks concurrently."""
-        return await asyncio.gather(*[self.run_agent(t) for t in tasks])
-    
-    def run_parallel(self, tasks: list[AgentTask]) -> list[AgentResult]:
-        """Synchronous wrapper for parallel execution."""
-        return asyncio.run(self.run_all(tasks))
+    def run_sequence(self, agent_names: list[str], context: str) -> list[AgentResult]:
+        """Run multiple agents sequentially."""
+        results = []
+        for agent_name in agent_names:
+            result = self.run_agent(agent_name, context)
+            results.append(result)
+        return results
 ```
 
 **Deliverables:**
-- [ ] `ParallelOrchestrator` class
-- [ ] Rate limiting with semaphore
+- [ ] `AgentRunner` class for sequential execution
 - [ ] Error handling per agent
-- [ ] Progress reporting
+- [ ] Clear separation: agents analyze, don't execute
 - [ ] Unit tests
 
 ### 2.2 Git Integration
@@ -431,22 +425,22 @@ class GitWorktreeManager:
 - [ ] Integration tests
 
 ### 2.3 /review Command
-**Estimated Time:** 12-16 hours
+**Estimated Time:** 8-12 hours
 
 Create `src/commands/review.py`:
 
 ```python
 """
-Multi-agent code review command.
+Code review command using agents for analysis.
 """
 from dataclasses import dataclass
 from pathlib import Path
 import subprocess
 
-from core.orchestrator import ParallelOrchestrator, AgentTask
+from core.agent_runner import AgentRunner
 from tools.git_worktree import GitWorktreeManager
 
-# Review agents to run in parallel
+# Review agents to run for analysis
 REVIEW_AGENTS = [
     "kieran-rails-reviewer",
     "security-sentinel", 
@@ -468,8 +462,8 @@ class ReviewTarget:
 class ReviewCommand:
     """Implementation of /review command."""
     
-    def __init__(self, orchestrator: ParallelOrchestrator, worktree_mgr: GitWorktreeManager):
-        self.orchestrator = orchestrator
+    def __init__(self, agent_runner: AgentRunner, worktree_mgr: GitWorktreeManager):
+        self.agent_runner = agent_runner
         self.worktree_mgr = worktree_mgr
         
     def get_review_target(self, target: str) -> ReviewTarget:
@@ -486,7 +480,7 @@ class ReviewCommand:
         return result.stdout
         
     def run(self, target: str) -> list[dict]:
-        """Execute the review."""
+        """Execute the review analysis (BEFORE work is merged)."""
         review_target = self.get_review_target(target)
         diff = self.get_diff(review_target)
         
@@ -502,16 +496,12 @@ Files Changed: {len(review_target.files)}
 ```
 
 Please review this code change and provide your analysis.
+Focus on identifying issues, risks, and recommendations.
+Do NOT make code changes - only provide analysis.
 """
         
-        # Create tasks for each review agent
-        tasks = [
-            AgentTask(agent_name=agent, context=context)
-            for agent in REVIEW_AGENTS
-        ]
-        
-        # Run all agents in parallel
-        results = self.orchestrator.run_parallel(tasks)
+        # Run review agents sequentially to analyze the code
+        results = self.agent_runner.run_sequence(REVIEW_AGENTS, context)
         
         # Aggregate and return findings
         return self._aggregate_findings(results)
@@ -523,7 +513,8 @@ Please review this code change and provide your analysis.
             if result.success:
                 findings.append({
                     "agent": result.agent_name,
-                    "analysis": result.output
+                    "analysis": result.output,
+                    "recommendations": "Extract from output"
                 })
         return findings
 ```
@@ -531,15 +522,16 @@ Please review this code change and provide your analysis.
 **Deliverables:**
 - [ ] `ReviewCommand` class
 - [ ] PR/branch target parsing
-- [ ] Parallel agent execution
-- [ ] Finding aggregation
+- [ ] Sequential agent execution for analysis
+- [ ] Finding aggregation (recommendations, not changes)
 - [ ] CLI integration: `gca review [PR#]`
 
 ### Stage 2 Success Criteria
-- [ ] `/review` command works with PR numbers
-- [ ] At least 5 agents run in parallel
-- [ ] Results aggregated and displayed nicely
-- [ ] Worktree creation works
+- [ ] `/review` command analyzes PRs before merging
+- [ ] Review agents provide analysis and recommendations
+- [ ] Results aggregated and displayed clearly
+- [ ] Worktree creation works for isolated analysis
+- [ ] Agents do NOT execute changes - only analyze
 
 ---
 
@@ -728,85 +720,100 @@ class TriageCommand:
 - [ ] File operations (rename, delete)
 - [ ] Summary report
 
-### 3.3 /resolve_todo_parallel Command
-**Estimated Time:** 8-12 hours
+### 3.3 Post-Work Validation
+**Estimated Time:** 6-8 hours
 
-Create `src/commands/resolve.py`:
+After work is completed, use agents to validate the results.
+
+Create `src/commands/validate.py`:
 
 ```python
 """
-Resolve multiple todos in parallel.
+Validate completed work using agents.
 """
 from tools.file_todos import TodoManager, TodoStatus
 
-class ResolveTodoCommand:
-    """Resolve ready todos using agents."""
+class ValidationCommand:
+    """Validate completed work using agents for analysis."""
     
-    def __init__(self, orchestrator, todo_manager: TodoManager, client):
-        self.orchestrator = orchestrator
+    def __init__(self, agent_runner, todo_manager: TodoManager):
+        self.agent_runner = agent_runner
         self.todo_manager = todo_manager
-        self.client = client
         
-    def run(self, max_parallel: int = 3):
-        """Resolve all ready todos."""
-        ready = self.todo_manager.list(TodoStatus.READY)
+    def run(self, work_branch: str):
+        """Validate completed work (AFTER work is done)."""
+        completed = self.todo_manager.list(TodoStatus.COMPLETE)
         
-        console.print(f"[cyan]Found {len(ready)} ready todos to resolve[/cyan]")
+        console.print(f"[cyan]Validating {len(completed)} completed todos[/cyan]")
         
-        # Analyze dependencies
-        dependency_graph = self._build_dependency_graph(ready)
-        execution_order = self._topological_sort(dependency_graph)
+        # Get the changes made
+        diff = self._get_work_diff(work_branch)
         
-        # Display execution plan
-        self._display_mermaid_diagram(execution_order)
+        # Build validation context
+        context = f"""
+## Completed Work
+Branch: {work_branch}
+Todos: {len(completed)}
+
+## Changes
+```diff
+{diff}
+```
+
+## Task
+Validate that the completed work:
+1. Meets the acceptance criteria
+2. Follows best practices
+3. Has no regressions
+4. Is properly tested
+
+Provide your validation analysis.
+"""
         
-        if not Confirm.ask("Proceed with this execution plan?"):
-            return
-            
-        # Execute in parallel batches
-        for batch in execution_order:
-            self._execute_batch(batch)
+        # Use validation agents to analyze (not execute)
+        validation_agents = [
+            "architecture-strategist",
+            "security-sentinel",
+            "performance-oracle",
+        ]
+        
+        results = self.agent_runner.run_sequence(validation_agents, context)
+        
+        return self._create_validation_report(results)
     
-    def _execute_batch(self, todos: list[Todo]):
-        """Execute a batch of todos in parallel."""
-        tasks = []
-        for todo in todos:
-            task = AgentTask(
-                agent_name=self._select_agent(todo),
-                context=self._build_resolution_context(todo)
-            )
-            tasks.append(task)
-        
-        results = self.orchestrator.run_parallel(tasks)
-        
-        for todo, result in zip(todos, results):
-            if result.success:
-                self._apply_resolution(todo, result.output)
+    def _create_validation_report(self, results) -> dict:
+        """Create validation report from agent analysis."""
+        return {
+            "passed": all(r.success for r in results),
+            "issues": [r.output for r in results if not r.success],
+            "recommendations": [r.output for r in results if r.success]
+        }
 ```
 
 **Deliverables:**
-- [ ] Dependency analysis
-- [ ] Mermaid diagram generation
-- [ ] Parallel batch execution
-- [ ] Resolution application
+- [ ] Post-work validation command
+- [ ] Agent-based quality analysis
+- [ ] Validation report generation
+- [ ] Clear pass/fail criteria
 
 ### Stage 3 Success Criteria
 - [ ] Todos created from review findings
 - [ ] Interactive triage works
-- [ ] `/resolve_todo_parallel` executes correctly
+- [ ] Post-work validation analyzes completed work
 - [ ] Status transitions tracked properly
+- [ ] Validation reports help decide if work is ready to merge
 
 ---
 
 ## Stage 4: Planning & Research (Week 7-8)
 **Goal:** Implement /plan command with research agents
 
-### 4.1 Research Agent Orchestration
-**Estimated Time:** 8-12 hours
+### 4.1 Research Agent for Pre-Work Analysis
+**Estimated Time:** 6-8 hours
 
 ```python
 """
-Research agents for codebase analysis.
+Research agents for pre-work codebase analysis.
 """
 RESEARCH_AGENTS = [
     "repo-research-analyst",      # Analyze repo patterns
@@ -815,25 +822,18 @@ RESEARCH_AGENTS = [
     "git-history-analyzer",       # Git history context
 ]
 
-class ResearchOrchestrator:
-    """Run research agents to gather context."""
+class ResearchRunner:
+    """Run research agents to gather context BEFORE work begins."""
     
     def research_feature(self, feature_description: str, repo_path: Path) -> dict:
-        """Gather research for a new feature."""
+        """Gather research for a new feature (BEFORE implementation)."""
         
         # Get repo context
         repo_context = self._get_repo_context(repo_path)
         
-        # Run research agents in parallel
-        tasks = [
-            AgentTask(
-                agent_name=agent,
-                context=f"Feature: {feature_description}\n\nRepo: {repo_context}"
-            )
-            for agent in RESEARCH_AGENTS
-        ]
-        
-        results = self.orchestrator.run_parallel(tasks)
+        # Run research agents sequentially to gather insights
+        context = f"Feature: {feature_description}\n\nRepo: {repo_context}"
+        results = self.agent_runner.run_sequence(RESEARCH_AGENTS, context)
         
         return {
             "patterns": results[0].output if results[0].success else "",
@@ -844,14 +844,14 @@ class ResearchOrchestrator:
 ```
 
 ### 4.2 /plan Command
-**Estimated Time:** 12-16 hours
+**Estimated Time:** 10-12 hours
 
 ```python
 """
-Create detailed plans from feature descriptions.
+Create detailed plans from feature descriptions (BEFORE work begins).
 """
 class PlanCommand:
-    """Generate structured plans for features."""
+    """Generate structured plans for features using agents for research."""
     
     DETAIL_LEVELS = {
         "minimal": ["description", "acceptance_criteria"],
@@ -861,19 +861,25 @@ class PlanCommand:
     }
     
     def run(self, feature_description: str, detail_level: str = "more"):
-        """Create a plan for a feature."""
+        """Create a plan for a feature (PRE-WORK phase)."""
         
-        # 1. Run research agents
+        # 1. Run research agents to gather insights
         research = self.research.research_feature(feature_description, self.repo_path)
         
-        # 2. Generate plan using Gemini
+        # 2. Generate plan using Gemini (plan creation, not execution)
         plan = self._generate_plan(feature_description, research, detail_level)
         
         # 3. Save to plans/ directory
         plan_path = self._save_plan(plan)
         
-        # 4. Offer next steps
-        return self._present_options(plan_path)
+        # 4. Present plan for human/tool execution
+        console.print("[green]Plan created successfully[/green]")
+        console.print("Next steps:")
+        console.print("  1. Review the plan")
+        console.print("  2. Execute the plan using your preferred tools/process")
+        console.print("  3. Run validation after completion")
+        
+        return plan_path
 ```
 
 ### 4.3 GitHub Integration
@@ -901,23 +907,24 @@ class GitHubClient:
 ```
 
 ### Stage 4 Success Criteria
-- [ ] Research agents gather codebase context
-- [ ] `/plan` generates structured plans
+- [ ] Research agents gather codebase context BEFORE work
+- [ ] `/plan` generates structured plans for human/tool execution
 - [ ] Plans saved to `plans/` directory
 - [ ] Optional GitHub issue creation
 - [ ] Multiple detail levels work
+- [ ] Clear separation: planning (agents) vs. execution (humans/tools)
 
 ---
 
-## Stage 5: Work Execution (Week 9-10)
-**Goal:** Implement /work command for plan execution
+## Stage 5: Work Tracking (Week 9-10)
+**Goal:** Track work execution (done by humans/tools, not agents)
 
 ### 5.1 Plan Parser
 **Estimated Time:** 4-6 hours
 
 ```python
 """
-Parse plan files into actionable tasks.
+Parse plan files into trackable tasks.
 """
 @dataclass
 class PlanTask:
@@ -933,18 +940,18 @@ class PlanParser:
         """Extract tasks from plan file."""
 ```
 
-### 5.2 /work Command
-**Estimated Time:** 12-16 hours
+### 5.2 /track Command
+**Estimated Time:** 8-10 hours
 
 ```python
 """
-Execute work plans systematically.
+Track work execution (NOT execute work).
 """
-class WorkCommand:
-    """Execute a plan with tracking and validation."""
+class TrackCommand:
+    """Track progress of work execution."""
     
     def run(self, plan_path: Path):
-        """Execute a plan."""
+        """Setup tracking for a plan (work executed elsewhere)."""
         
         # 1. Parse plan into tasks
         tasks = self.parser.parse(plan_path)
@@ -956,23 +963,20 @@ class WorkCommand:
         for task in tasks:
             self.todo_manager.create(task.to_todo())
         
-        # 4. Execute tasks
-        for task in tasks:
-            self._execute_task(task, worktree)
-            self._run_tests()
-            self._update_progress(task)
-        
-        # 5. Create PR
-        self._create_pr(plan_path, worktree)
+        # 4. Display work tracking dashboard
+        console.print("[cyan]Work tracking initialized[/cyan]")
+        console.print(f"Worktree: {worktree.path}")
+        console.print(f"Tasks: {len(tasks)}")
+        console.print("\nExecute the work using your preferred tools/IDE")
+        console.print("Then run: gca validate [branch] to check results")
 ```
 
 ### Stage 5 Success Criteria
-- [ ] Plans parsed into tasks
-- [ ] Worktree created for isolation
-- [ ] Tasks executed systematically
-- [ ] Tests run after each task
-- [ ] Progress tracked via todos
-- [ ] PR created on completion
+- [ ] Plans parsed into trackable tasks
+- [ ] Worktree created for isolated work
+- [ ] Todos created for tracking progress
+- [ ] Clear that work execution happens externally
+- [ ] Dashboard shows work progress
 
 ---
 
@@ -1016,15 +1020,17 @@ class WorkCommand:
 | Stage | Duration | Key Deliverable |
 |-------|----------|-----------------|
 | **1. Foundation** | 2 weeks | CLI + Agent loading + Gemini client |
-| **2. Core Workflows** | 2 weeks | `/review` with parallel agents |
-| **3. Todo System** | 2 weeks | `/triage` + `/resolve_todo_parallel` |
-| **4. Planning** | 2 weeks | `/plan` with research agents |
-| **5. Work Execution** | 2 weeks | `/work` command |
+| **2. Core Workflows** | 2 weeks | `/review` for pre-merge analysis |
+| **3. Todo System** | 2 weeks | `/triage` + post-work validation |
+| **4. Planning** | 2 weeks | `/plan` with research agents (pre-work) |
+| **5. Work Tracking** | 2 weeks | `/track` command for progress |
 | **6. Polish** | 2 weeks | Production-ready distribution |
 
 **Total: ~12 weeks (3 months) for a solo developer**
 
 With a team of 2-3, this could be compressed to 6-8 weeks.
+
+**Key Philosophy:** Agents are used BEFORE work (planning, research) and AFTER work (review, validation), but NOT during execution. Work is done by humans or other tools.
 
 ---
 
@@ -1032,8 +1038,14 @@ With a team of 2-3, this could be compressed to 6-8 weeks.
 
 1. **Copy agents/** - Import all 24 agent prompts
 2. **Use `gemini_agent_bridge.py`** - Already works for basic usage
-3. **Start with `/review`** - Highest value, clearest scope
+3. **Start with `/review`** - Highest value, clearest scope (pre-merge analysis)
 4. **Skip MCP servers initially** - Can add later with Gemini function calling
+
+**Remember:** Use agents for analysis and recommendations only:
+- `/plan` - Research and create plans (BEFORE work)
+- `/review` - Analyze PRs (BEFORE merging)
+- `/validate` - Check completed work (AFTER work)
+- Agents do NOT execute code changes
 
 ---
 
@@ -1063,9 +1075,9 @@ PyGithub>=2.0  # Optional, for GitHub integration
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| Gemini API rate limits | Medium | High | Implement backoff, batching |
+| Gemini API rate limits | Medium | High | Implement backoff, sequential execution |
 | Agent prompts don't work well with Gemini | Low | Medium | Test each agent, adjust prompts |
-| Parallel execution complexity | Medium | Medium | Start with serial, add parallel later |
+| Confusion about agent role | Medium | Medium | Clear docs: agents analyze, don't execute |
 | Google releases competing tool | Low | High | Focus on speed to market, open-source |
 
 ---
